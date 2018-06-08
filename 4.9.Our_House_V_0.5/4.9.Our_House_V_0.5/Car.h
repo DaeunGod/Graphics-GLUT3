@@ -101,7 +101,7 @@ void draw_car_dummy(int cameraIndex) {
 	ModelMatrix_CAR_BODY = glm::rotate(ModelMatrix_CAR_BODY, -car_data.rotation_angle_car, glm::vec3(0.0f, 0.0f, 1.0f));
 	ModelMatrix_CAR_BODY = glm::rotate(ModelMatrix_CAR_BODY, -90.0f*TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 	ModelMatrix_CAR_BODY = glm::rotate(ModelMatrix_CAR_BODY, 90.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
-	
+
 	//ModelMatrix_CAR_BODY = glm::scale(ModelMatrix_CAR_BODY, glm::vec3(3.0f, 3.0f, 3.0f));
 	ModelViewMatrix = ViewMatrix[cameraIndex] * ModelMatrix_CAR_BODY;
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
@@ -129,7 +129,7 @@ void draw_car_dummy(int cameraIndex) {
 
 
 	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(-3.9f, -3.5f, 4.5f));
-	
+
 	ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_WHEEL, -20.0f*TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 	ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_WHEEL, car_data.rotation_angle_car, glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -138,30 +138,30 @@ void draw_car_dummy(int cameraIndex) {
 
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_WHEEL;
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	draw_wheel_and_nut( cameraIndex );  // draw wheel 0
+	draw_wheel_and_nut(cameraIndex);  // draw wheel 0
 
-						   //ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_BODY, -10.0f*TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+									  //ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_BODY, -10.0f*TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(3.9f, -3.5f, 4.5f));
 	ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_WHEEL, car_data.rotation_angle_car, glm::vec3(0.0f, 0.0f, 1.0f));
 	ModelViewMatrix = ViewMatrix[cameraIndex] * ModelMatrix_CAR_WHEEL;
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_WHEEL;
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	draw_wheel_and_nut( cameraIndex );  // draw wheel 1
+	draw_wheel_and_nut(cameraIndex);  // draw wheel 1
 
 
 	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(-3.9f, -3.5f, -4.5f));
 	ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_WHEEL, -20.0f*TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 	ModelMatrix_CAR_WHEEL = glm::scale(ModelMatrix_CAR_WHEEL, glm::vec3(1.0f, 1.0f, -1.0f));
 	ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_WHEEL, car_data.rotation_angle_car, glm::vec3(0.0f, 0.0f, 1.0f));
-	
+
 
 	ModelViewMatrix = ViewMatrix[cameraIndex] * ModelMatrix_CAR_WHEEL;
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_WHEEL;
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	draw_wheel_and_nut( cameraIndex );  // draw wheel 2
+	draw_wheel_and_nut(cameraIndex);  // draw wheel 2
 
 	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(3.9f, -3.5f, -4.5f));
 	ModelMatrix_CAR_WHEEL = glm::scale(ModelMatrix_CAR_WHEEL, glm::vec3(1.0f, 1.0f, -1.0f));
@@ -172,5 +172,5 @@ void draw_car_dummy(int cameraIndex) {
 
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_WHEEL;
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	draw_wheel_and_nut( cameraIndex );  // draw wheel 3
+	draw_wheel_and_nut(cameraIndex);  // draw wheel 3
 }

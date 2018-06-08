@@ -4,13 +4,31 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+
 #include "Shaders/LoadShaders.h"
-GLuint h_ShaderProgram; // handle to shader program
-GLint loc_ModelViewProjectionMatrix, loc_primitive_color; // indices of uniform variables
+
+GLuint h_ShaderProgram_simple, h_ShaderProgram_PS; // handle to shader program
+GLint loc_ModelViewProjectionMatrix_simple, loc_primitive_color; // indices of uniform variables
+
+
+
+GLint loc_global_ambient_color;
+loc_light_Parameters loc_light[NUMBER_OF_LIGHT_SUPPORTED];
+loc_Material_Parameters loc_material;
+GLint loc_ModelViewProjectionMatrix_PS, loc_ModelViewMatrix_PS, loc_ModelViewMatrixInvTrans_PS;
+
+GLint &loc_ModelViewProjectionMatrix = loc_ModelViewProjectionMatrix_simple;
+
+// lights in scene
+Light_Parameters light[NUMBER_OF_LIGHT_SUPPORTED];
+
 
 // include glm/*.hpp only if necessary
 //#include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp> //translate, rotate, scale, lookAt, perspective, etc.
+
+
+
 #define TO_RADIAN 0.01745329252f  
 #define TO_DEGREE 57.295779513f
 
@@ -42,18 +60,16 @@ enum _CAMERA_INFO {
 glm::mat4 ModelViewProjectionMatrix;
 glm::mat4 ModelViewMatrix, ViewMatrix[NUMBER_OF_CAMERAS], ProjectionMatrix[NUMBER_OF_CAMERAS];
 
+glm::mat4 ViewMatrix_tmp;
+
 glm::mat4 ModelMatrix_CAR_BODY, ModelMatrix_CAR_WHEEL, ModelMatrix_CAR_NUT, ModelMatrix_CAR_DRIVER;
 glm::mat4 ModelMatrix_CAR_BODY_to_DRIVER; // computed only once in initialize_camera()
-
-
-#include "MyShading.h"
-
-loc_Material_Parameters loc_material;
 
 #include "Geometry.h"
 #include "Object_Definitions.h"
 #include "Camera.h"
 #include "Car.h"
+#include "light.h"
 
 typedef struct _VIEWPORT {
 	int x, y, w, h;
@@ -123,9 +139,18 @@ void camera_rotation_around_axis(CAMERA &_camera, float angle, glm::vec3 rot_axi
 void display(void) {
 	keySpecialOperation();
 
+	//glm::vec4 position_EC = ViewMatrix[0] * glm::vec4(light[1].position[0], light[1].position[1],
+	//	light[1].position[2], light[1].position[3]);
+	//glUniform4fv(loc_light[1].position, 1, &position_EC[0]);
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	 
+	
 	for (int i = 0; i < NUMBER_OF_CAMERAS-1; i++) {
+		
+
+		glUseProgram(h_ShaderProgram_simple);
+
 		if (orthoOrPerspective == false) {
 			if (i == 4 || i == 5 || i == 6)
 				continue;
@@ -144,45 +169,66 @@ void display(void) {
 		glLineWidth(1.0f);
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		draw_static_object(&(static_objects[OBJ_BUILDING]), 0, i);
-
+		set_light_position(i);
+		glUseProgram(h_ShaderProgram_PS);
+		
+		set_material_floor();
+		draw_static_object(&(static_objects[OBJ_BUILDING]), 0, i, 1);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		
+		draw_floor(i);
 
-		//set_material_floor();
-		//draw_floor(i);
+		
+		
+		
+		
+		
 
-		draw_static_object(&(static_objects[OBJ_TABLE]), 0, i);
-		draw_static_object(&(static_objects[OBJ_TABLE]), 1, i);
-		draw_static_object(&(static_objects[OBJ_TABLE]), 3, i);
+		draw_static_object(&(static_objects[OBJ_TABLE]), 0, i, 1);
+		draw_static_object(&(static_objects[OBJ_TABLE]), 1, i, 1);
+		draw_static_object(&(static_objects[OBJ_TABLE]), 3, i, 1);
 
-		draw_static_object(&(static_objects[OBJ_LIGHT]), 0, i);
-		draw_static_object(&(static_objects[OBJ_LIGHT]), 1, i);
-		draw_static_object(&(static_objects[OBJ_LIGHT]), 2, i);
-		draw_static_object(&(static_objects[OBJ_LIGHT]), 3, i);
-		draw_static_object(&(static_objects[OBJ_LIGHT]), 4, i);
-		draw_static_object(&(static_objects[OBJ_LIGHT]), 5, i);
-		draw_static_object(&(static_objects[OBJ_LIGHT]), 6, i);
+		
+		draw_static_object(&(static_objects[OBJ_LIGHT]), 0, i, 1);
+		draw_static_object(&(static_objects[OBJ_LIGHT]), 1, i, 1);
+		draw_static_object(&(static_objects[OBJ_LIGHT]), 2, i, 1);
+		draw_static_object(&(static_objects[OBJ_LIGHT]), 3, i, 1);
+		draw_static_object(&(static_objects[OBJ_LIGHT]), 4, i, 1);
+		draw_static_object(&(static_objects[OBJ_LIGHT]), 5, i, 1);
+		draw_static_object(&(static_objects[OBJ_LIGHT]), 6, i, 1);
 
-		draw_static_object(&(static_objects[OBJ_TEAPOT]), 0, i);
+		draw_static_object(&(static_objects[OBJ_TEAPOT]), 0, i, 1);
 		//draw_static_object(&(static_objects[OBJ_TEAPOT]), 1, i);
-		draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 0, i);
-		draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 1, i);
-		draw_static_object(&(static_objects[OBJ_FRAME]), 0, i);
-		draw_static_object(&(static_objects[OBJ_NEW_PICTURE]), 0, i);
-		draw_static_object(&(static_objects[OBJ_COW]), 1, i);
+		draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 0, i, 1);
+		draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 1, i, 1);
+		draw_static_object(&(static_objects[OBJ_FRAME]), 0, i, 1);
+		draw_static_object(&(static_objects[OBJ_NEW_PICTURE]), 0, i, 1);
+		draw_static_object(&(static_objects[OBJ_COW]), 1, i, 1);
+
+		draw_static_object(&(static_objects[OBJ_TABLE]), 2, i, 1);
+		draw_static_object(&(static_objects[OBJ_TEAPOT]), 1, i, 1);
 		//draw_static_object(&(static_objects[OBJ_COW1]), 0, i);
 		//draw_static_object(&(static_objects[OBJ_COW2]), 0, i);
 
-		draw_car_dummy(i);
-
-		
 		draw_spider(i);
+		draw_animated_tiger(i);
+		//
+		//draw_two_hier_obj(&(static_objects[OBJ_TABLE]), &(static_objects[OBJ_TEAPOT]), 2, 1, i);
+		glUseProgram(h_ShaderProgram_simple);
+		
+		draw_car_dummy(i);
+		
+		
+		
 		draw_ben(i);
 
-		draw_two_hier_obj(&(static_objects[OBJ_TABLE]), &(static_objects[OBJ_TEAPOT]), 2, 1, i);
-		draw_animated_tiger(i);
+		
+		
 
 		draw_path(i);
+
+		glUseProgram(0);
 	}
 
 	glutSwapBuffers();
@@ -748,7 +794,25 @@ void motion(int x, int y) {
 		break;
 	}
 	set_ViewMatrix_from_camera_frame(ViewMatrix[0], camera[currentCamera]);
-	
+
+	/*glm::mat4 obj = glm::translate(glm::mat4(1), camera[0].pos);
+	glm::mat4 rot = glm::mat4(1);
+	rot[0][0] = camera[0].uaxis.x; rot[1][0] = camera[0].vaxis.x; rot[2][0] = camera[0].naxis.x;
+	rot[0][1] = camera[0].uaxis.y; rot[1][1] = camera[0].vaxis.y; rot[2][1] = camera[0].naxis.y;
+	rot[0][2] = camera[0].uaxis.z; rot[1][2] = camera[0].vaxis.z; rot[2][2] = camera[0].naxis.z;
+
+	obj = obj * rot;
+	obj = ViewMatrix[0] * obj;
+	glm::vec4 position_EC = obj * glm::vec4(light[1].position[0], light[1].position[1],
+		light[1].position[2], light[1].position[3]);
+	glUniform4fv(loc_light[1].position, 1, &position_EC[0]);*/
+	/*light[0].position[0] = camera[0].pos.x;
+	light[0].position[0] = camera[0].pos.y+10;
+	light[0].position[0] = camera[0].pos.z;
+	glm::vec3 direction_EC = -camera[currentCamera].naxis;
+	glUniform4fv(loc_light[0].position, 1, light[0].position);
+	glUniform3fv(loc_light[0].spot_direction, 1, &direction_EC[0]);*/
+
 	//ViewMatrix = glm::lookAt(camera.pos, camera.center, camera.vaxis);
 	//ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
 
@@ -757,28 +821,73 @@ void motion(int x, int y) {
 }
 
 void prepare_shader_program(void) {
+	int i;
+	char string[256];
 	ShaderInfo shader_info[3] = {
 		{ GL_VERTEX_SHADER, "Shaders/simple.vert" },
 		{ GL_FRAGMENT_SHADER, "Shaders/simple.frag" },
 		{ GL_NONE, NULL }
 	};
-	h_ShaderProgram = LoadShaders(shader_info);
-	glUseProgram(h_ShaderProgram);
 
-	loc_ModelViewProjectionMatrix = glGetUniformLocation(h_ShaderProgram, "u_ModelViewProjectionMatrix");
-	loc_primitive_color = glGetUniformLocation(h_ShaderProgram, "u_primitive_color");
+	ShaderInfo shader_info_PS[3] = {
+		{ GL_VERTEX_SHADER, "Shaders/Phong.vert" },
+	{ GL_FRAGMENT_SHADER, "Shaders/Phong.frag" },
+	{ GL_NONE, NULL }
+	};
+
+	h_ShaderProgram_simple = LoadShaders(shader_info);
+	glUseProgram(h_ShaderProgram_simple);
+
+	loc_ModelViewProjectionMatrix_simple = glGetUniformLocation(h_ShaderProgram_simple, "u_ModelViewProjectionMatrix");
+	loc_primitive_color = glGetUniformLocation(h_ShaderProgram_simple, "u_primitive_color");
+
+	h_ShaderProgram_PS = LoadShaders(shader_info_PS);
+	loc_ModelViewProjectionMatrix_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewProjectionMatrix");
+	loc_ModelViewMatrix_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewMatrix");
+	loc_ModelViewMatrixInvTrans_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewMatrixInvTrans");
+
+	loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_global_ambient_color");
+	for (i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+		sprintf(string, "u_light[%d].light_on", i);
+		loc_light[i].light_on = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].position", i);
+		loc_light[i].position = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].ambient_color", i);
+		loc_light[i].ambient_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].diffuse_color", i);
+		loc_light[i].diffuse_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].specular_color", i);
+		loc_light[i].specular_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].spot_direction", i);
+		loc_light[i].spot_direction = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].spot_exponent", i);
+		loc_light[i].spot_exponent = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].spot_cutoff_angle", i);
+		loc_light[i].spot_cutoff_angle = glGetUniformLocation(h_ShaderProgram_PS, string);
+		sprintf(string, "u_light[%d].light_attenuation_factors", i);
+		loc_light[i].light_attenuation_factors = glGetUniformLocation(h_ShaderProgram_PS, string);
+	}
+
+	loc_material.ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.ambient_color");
+	loc_material.diffuse_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.diffuse_color");
+	loc_material.specular_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.specular_color");
+	loc_material.emissive_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.emissive_color");
+	loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_PS, "u_material.specular_exponent");
+
 }
+
+
 
 void initialize_OpenGL(void) {
 	initialize_camera();
 
 	glEnable(GL_DEPTH_TEST); // Default state
-	 
+	glEnable(GL_MULTISAMPLE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glClearColor(0.12f, 0.18f, 0.12f, 1.0f);
 
-	
+	initialize_lights_and_material();
 	//ViewMatrix[0] = glm::lookAt(camera[0].pos, camera[0].center, camera[0].vaxis);
 	//ViewMatrix[1] = glm::lookAt(camera[1].pos, camera[1].center, camera[1].vaxis);
 	//ViewMatrix[2] = glm::lookAt(camera[2].pos, camera[2].center, camera[2].vaxis);
@@ -802,6 +911,8 @@ void prepare_scene(void) {
 	car_data.init();
 
 	prepare_floor();
+
+	set_up_scene_lights();
 }
 
 void cleanup(void) {
@@ -833,6 +944,7 @@ void initialize_renderer(void) {
 	prepare_shader_program();
 	initialize_OpenGL();
 	prepare_scene();
+	
 }
 
 void initialize_glew(void) {

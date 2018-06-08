@@ -367,8 +367,10 @@ void initialize_camera(void) {
 	// Camera 0
 	glm::vec3 _vup = glm::vec3(0.0f, 0.0f, 1.0f), _vpn;
 
-	camera[CAMERA_MAIN].pos = glm::vec3(600.0f, 600.0f, 200.0f);
-	camera[CAMERA_MAIN].center = glm::vec3(125.0f, 80.0f, 25.0f);
+	//camera[CAMERA_MAIN].pos = glm::vec3(600.0f, 600.0f, 200.0f);
+	//camera[CAMERA_MAIN].center = glm::vec3(125.0f, 80.0f, 25.0f);
+	camera[CAMERA_MAIN].pos = glm::vec3(300.0f, 300.0f, 200.0f);
+	camera[CAMERA_MAIN].center = glm::vec3(0.0f, 0.0f, 0.0f);
 	//camera.uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 
 	_vpn = camera[CAMERA_MAIN].pos - camera[CAMERA_MAIN].center;
@@ -389,6 +391,7 @@ void initialize_camera(void) {
 	camera[CAMERA_MAIN].viewingVolume.prepare_line(true);
 
 	set_ViewMatrix_from_camera_frame(ViewMatrix[CAMERA_MAIN], camera[CAMERA_MAIN]);
+	ViewMatrix_tmp = ViewMatrix[CAMERA_MAIN];
 
 	////Camera 1
 	camera[CAMERA_ORTHO1].pos = glm::vec3(300.0f, 80.0f, 25.0f);
