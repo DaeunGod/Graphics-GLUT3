@@ -4,6 +4,12 @@
 #include <GL/gl.h>
 #define NUMBER_OF_LIGHT_SUPPORTED 8
 
+typedef enum _SHADER_TYPE {
+	SHADER_SIMPLE,
+	SHADER_PS,
+	SHADER_GS
+}ShaderType;
+
 typedef struct {
 	GLenum       type;
 	const char*  filename;

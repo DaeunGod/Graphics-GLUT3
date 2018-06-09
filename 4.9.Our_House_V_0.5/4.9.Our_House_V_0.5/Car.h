@@ -85,7 +85,7 @@ void draw_wheel_and_nut(int cameraIndex) {
 		ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
 		//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_NUT;
-		glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
 		glUniform3f(loc_primitive_color, 0.690f, 0.769f, 0.871f); // color name: LightSteelBlue
 		draw_geom_obj(GEOM_OBJ_ID_CAR_NUT); // draw i-th nut
@@ -106,7 +106,7 @@ void draw_car_dummy(int cameraIndex) {
 	ModelViewMatrix = ViewMatrix[cameraIndex] * ModelMatrix_CAR_BODY;
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 	//ModelViewProjectionMatrix = ViewProjectionMatrix[cameraIndex] * ModelMatrix_CAR_BODY;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
 	glUniform3f(loc_primitive_color, 0.498f, 1.000f, 0.831f); // color name: Aquamarine
 	draw_geom_obj(GEOM_OBJ_ID_CAR_BODY); // draw body
@@ -122,7 +122,7 @@ void draw_car_dummy(int cameraIndex) {
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_DRIVER;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 	glLineWidth(5.0f);
 	draw_axes(); // draw camera frame at driver seat
 	glLineWidth(1.0f);
@@ -137,7 +137,7 @@ void draw_car_dummy(int cameraIndex) {
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_WHEEL;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 	draw_wheel_and_nut(cameraIndex);  // draw wheel 0
 
 									  //ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_BODY, -10.0f*TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -146,7 +146,7 @@ void draw_car_dummy(int cameraIndex) {
 	ModelViewMatrix = ViewMatrix[cameraIndex] * ModelMatrix_CAR_WHEEL;
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_WHEEL;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 	draw_wheel_and_nut(cameraIndex);  // draw wheel 1
 
 
@@ -160,7 +160,7 @@ void draw_car_dummy(int cameraIndex) {
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_WHEEL;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 	draw_wheel_and_nut(cameraIndex);  // draw wheel 2
 
 	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(3.9f, -3.5f, -4.5f));
@@ -171,6 +171,6 @@ void draw_car_dummy(int cameraIndex) {
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
 	//ModelViewProjectionMatrix = ViewProjectionMatrix * ModelMatrix_CAR_WHEEL;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 	draw_wheel_and_nut(cameraIndex);  // draw wheel 3
 }

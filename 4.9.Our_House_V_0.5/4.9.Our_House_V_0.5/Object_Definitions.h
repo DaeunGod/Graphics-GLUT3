@@ -101,7 +101,7 @@ int ben_vertex_offset[N_BEN_FRAMES];
 GLfloat *ben_vertices[N_BEN_FRAMES];
 int cur_frame_ben = 0;
 
-glm::vec3 ben_pos = glm::vec3(83.0f, 151.0f, 10.0f);
+glm::vec3 ben_pos = glm::vec3(83.0f, 15.0f, 50.0f);
 float ben_angle = 0.0f;
 
 Material_Parameters material_ben;
@@ -293,11 +293,11 @@ void define_static_objects(void) {
 	static_objects[OBJ_LIGHT].material[4].specular = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
 	static_objects[OBJ_LIGHT].material[4].exponent = 128.0f*0.4f;
 
-	static_objects[OBJ_LIGHT].pos[5] = glm::vec3(166.0f, 153.0f, 49.0f);
+	static_objects[OBJ_LIGHT].pos[5] = glm::vec3(166.0f, 133.0f, 49.0f);
 	static_objects[OBJ_LIGHT].ModelMatrix[5] = glm::translate(glm::mat4(1.0f), static_objects[OBJ_LIGHT].pos[5]);
 	static_objects[OBJ_LIGHT].ModelMatrix[5] = glm::scale(static_objects[OBJ_LIGHT].ModelMatrix[5], glm::vec3(1.0f, -1.0f, 1.0f));
 	static_objects[OBJ_LIGHT].ModelMatrix[5] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[5],
-		180.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+		90.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
 	
 
 	static_objects[OBJ_LIGHT].material[5].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -341,7 +341,7 @@ void define_static_objects(void) {
 	static_objects[OBJ_TEAPOT].material[0].exponent = 128.0f*0.6f;
 
 
-	static_objects[OBJ_TEAPOT].ModelMatrix[1] = glm::translate(glm::mat4(1.0f), glm::vec3(193.0f, 120.0f, 50.0f));
+	static_objects[OBJ_TEAPOT].ModelMatrix[1] = glm::translate(glm::mat4(1.0f), glm::vec3(45.0f, 45.0f, 10.0f));
 	static_objects[OBJ_TEAPOT].ModelMatrix[1] = glm::scale(static_objects[OBJ_TEAPOT].ModelMatrix[1],
 		glm::vec3(2.0f, 2.0f, 2.0f));
 
@@ -485,7 +485,7 @@ void define_static_objects(void) {
 	n_static_objects = 8;
 }
 
-void draw_static_object(Object *obj_ptr, int instance_ID, int cameraIndex, int mode ) {
+void draw_static_object(Object *obj_ptr, int instance_ID, int cameraIndex, ShaderType mode ) {
 	glm::mat3 ModelViewMatrixInvTrans;
 	glFrontFace(obj_ptr->front_face_mode);
 
@@ -493,17 +493,24 @@ void draw_static_object(Object *obj_ptr, int instance_ID, int cameraIndex, int m
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
 
-	if (mode == 0) {
-		glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	if (mode == SHADER_SIMPLE) {
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 		glUniform3f(loc_primitive_color, obj_ptr->material[instance_ID].diffuse.r,
 			obj_ptr->material[instance_ID].diffuse.g, obj_ptr->material[instance_ID].diffuse.b);
 	}
-	else {
+	else if (mode == SHADER_PS) {
 		set_material_static_object(obj_ptr, instance_ID);
 		ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
 		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 		glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
 		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	}
+	else {
+		set_material_static_object(obj_ptr, instance_ID);
+		ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_GS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewMatrix_GS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_GS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
 	}
 
 	glBindVertexArray(obj_ptr->VAO);
@@ -549,7 +556,7 @@ void draw_axes(glm::mat4 obj, int cameraIndex) {
 	//ModelViewMatrix = glm::scale(ViewMatrix[cameraIndex], glm::vec3(WC_AXIS_LENGTH, WC_AXIS_LENGTH, WC_AXIS_LENGTH));
 	ModelViewMatrix = glm::scale(obj, glm::vec3(WC_AXIS_LENGTH, WC_AXIS_LENGTH, WC_AXIS_LENGTH));
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
 	glBindVertexArray(VAO_axes);
 	glUniform3fv(loc_primitive_color, 1, axes_color[0]);
@@ -660,7 +667,7 @@ void define_animated_tiger(void) {
 	//tiger_data.move(50.0f);
 }
 
-void draw_animated_tiger(int cameraIndex) {
+void draw_animated_tiger(int cameraIndex, ShaderType shader_type) {
 	glm::mat3 ModelViewMatrixInvTrans;
 	glm::mat4 _model = glm::mat4(1.0f);
 	glm::mat4 rot = glm::mat4(1.0f);
@@ -680,11 +687,18 @@ void draw_animated_tiger(int cameraIndex) {
 	
 	set_material_static_object(&tiger[0], 0);
 
-	ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
-
-	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	if (shader_type == SHADER_PS) {
+		ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	}
+	else {
+		ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_GS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewMatrix_GS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_GS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	}
 
 
 	glBindVertexArray(tiger[tiger_data.cur_frame].VAO);
@@ -705,7 +719,7 @@ void draw_animated_tiger(int cameraIndex) {
 
 	ModelViewMatrix = ViewMatrix[cameraIndex] * obj;
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
 	glBindVertexArray(VAO_axes);
 	glUniform3fv(loc_primitive_color, 1, axes_color[0]);
@@ -786,7 +800,7 @@ void prepare_spider(void) {
 	material_spider.specular_exponent = 2.5f;
 }
 
-void draw_spider(int cameraIndex) {
+void draw_spider(int cameraIndex, ShaderType shader_type) {
 	glm::mat3 ModelViewMatrixInvTrans;
 	glFrontFace(GL_CW);
 
@@ -803,12 +817,20 @@ void draw_spider(int cameraIndex) {
 	glUniform1f(loc_material.specular_exponent, material_spider.specular_exponent);
 	glUniform4fv(loc_material.emissive_color, 1, material_spider.emissive_color);
 
-	ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
-	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	if (shader_type == SHADER_GS) {
+		ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	}
+	else {
+		ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_GS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewMatrix_GS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_GS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	}
 
-	glUniform3f(loc_primitive_color, material_spider.diffuse_color[0], material_spider.diffuse_color[1], material_spider.diffuse_color[2]);
+	//glUniform3f(loc_primitive_color, material_spider.diffuse_color[0], material_spider.diffuse_color[1], material_spider.diffuse_color[2]);
 	glBindVertexArray(spider_VAO);
 	glDrawArrays(GL_TRIANGLES, spider_vertex_offset[cur_frame_spider], 3 * spider_n_triangles[cur_frame_spider]);
 	glBindVertexArray(0);
@@ -868,47 +890,79 @@ void prepare_ben(void) {
 	material_ben.diffuse_color[1] = 0.931232f;
 	material_ben.diffuse_color[2] = 0.642333f;
 	material_ben.diffuse_color[3] = 1.0f;
+
+	material_ben.ambient_color[0] = 0.3f; material_ben.ambient_color[1] = 0.3f;
+	material_ben.ambient_color[2] = 0.3f; material_ben.ambient_color[3] = 1.0f;
+
+	material_ben.emissive_color[0] = 0.0f; material_ben.emissive_color[1] = 0.0f;
+	material_ben.emissive_color[2] = 0.0f; material_ben.emissive_color[3] = 1.0f;
+
+	material_ben.specular_color[0] = 0.4f; material_ben.specular_color[1] = 0.4f;
+	material_ben.specular_color[2] = 0.4f; material_ben.specular_color[3] = 1.0f;
+
+	material_ben.specular_exponent = 2.5f;
 }
 
 void draw_ben(int cameraIndex) {
-	glm::mat4 _model = glm::mat4(1.0f);
+	//glm::mat4 _model = glm::mat4(1.0f);
+	glm::mat3 ModelViewMatrixInvTrans;
+	glFrontFace(GL_CW);
 
-
-	_model = glm::translate(glm::mat4(1.0f), ben_pos);
-	_model = glm::scale(_model, glm::vec3(30.0f, 5.0f, 30.0f));
+	//_model = glm::translate(glm::mat4(1.0f), ben_pos);
+	//_model = glm::scale(_model, glm::vec3(30.0f, 5.0f, 30.0f));
 	
-	_model = glm::rotate(_model, -ben_angle, glm::vec3(0.0f, 1.0f, 0.0f));
-	_model = glm::rotate(_model, -90.0f * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	//_model = glm::rotate(_model, -ben_angle, glm::vec3(0.0f, 1.0f, 0.0f));
+	//_model = glm::rotate(_model, -90.0f * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 
+	printf("%f\n", ben_angle);
 
-	ModelViewMatrix = ViewMatrix[cameraIndex] * _model;
+	ModelViewMatrix = glm::mat4(1.0f);
+	//ModelViewMatrix = ViewMatrix[cameraIndex] * _model;
+	ModelViewMatrix = glm::translate(ViewMatrix[cameraIndex], ben_pos);
+	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(30.0f, 5.0f, 30.0f));
+
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, -ben_angle, glm::vec3(0.0f, 1.0f, 0.0f));
+	ModelViewMatrix = glm::rotate(ModelViewMatrix, -90.0f * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	glFrontFace(GL_CW);
+	//glUniform4fv(loc_material.ambient_color, 1, material_ben.ambient_color);
+	//glUniform4fv(loc_material.diffuse_color, 1, material_ben.diffuse_color);
+	//glUniform4fv(loc_material.specular_color, 1, material_ben.specular_color);
+	//glUniform1f(loc_material.specular_exponent, material_ben.specular_exponent);
+	//glUniform4fv(loc_material.emissive_color, 1, material_ben.emissive_color);
 
-	glUniform3f(loc_primitive_color, material_ben.diffuse_color[0], material_ben.diffuse_color[1], material_ben.diffuse_color[2]);
+	//glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+
+	ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	
+
+	//glUniform3f(loc_primitive_color, material_ben.diffuse_color[0], material_ben.diffuse_color[1], material_ben.diffuse_color[2]);
 	glBindVertexArray(ben_VAO);
-	glDrawArrays(GL_TRIANGLES, ben_vertex_offset[cur_frame_ben], 3 * ben_n_triangles[cur_frame_ben]);
+	glDrawArrays(GL_TRIANGLES, ben_vertex_offset[0], 3 * ben_n_triangles[0]);
 	glBindVertexArray(0);
 
-	_model = glm::translate(glm::mat4(1.0f), ben_pos + glm::vec3(0.0f, -20.0f, 0.0f));
-	_model = glm::scale(_model, glm::vec3(30.0f, 5.0f, 30.0f));
+	//_model = glm::translate(glm::mat4(1.0f), ben_pos + glm::vec3(0.0f, -20.0f, 0.0f));
+	//_model = glm::scale(_model, glm::vec3(30.0f, 5.0f, 30.0f));
 
-	_model = glm::rotate(_model, ben_angle, glm::vec3(0.0f, 1.0f, 0.0f));
-	_model = glm::rotate(_model, -90.0f * TO_RADIAN, glm::vec3(0.0f, -1.0f, 0.0f));
+	//_model = glm::rotate(_model, ben_angle, glm::vec3(0.0f, 1.0f, 0.0f));
+	//_model = glm::rotate(_model, -90.0f * TO_RADIAN, glm::vec3(0.0f, -1.0f, 0.0f));
 
 
-	ModelViewMatrix = ViewMatrix[cameraIndex] * _model;
-	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
+	//ModelViewMatrix = ViewMatrix[cameraIndex] * _model;
+	//ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	glFrontFace(GL_CW);
+	//ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+	//glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	//glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+	//glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
 
-	glUniform3f(loc_primitive_color, material_ben.diffuse_color[0], material_ben.diffuse_color[1], material_ben.diffuse_color[2]);
-	glBindVertexArray(ben_VAO);
-	glDrawArrays(GL_TRIANGLES, ben_vertex_offset[cur_frame_ben], 3 * ben_n_triangles[cur_frame_ben]);
-	glBindVertexArray(0);
+	////glUniform3f(loc_primitive_color, material_ben.diffuse_color[0], material_ben.diffuse_color[1], material_ben.diffuse_color[2]);
+	//glBindVertexArray(ben_VAO);
+	//glDrawArrays(GL_TRIANGLES, ben_vertex_offset[cur_frame_ben], 3 * ben_n_triangles[cur_frame_ben]);
+	//glBindVertexArray(0);
 }
 
 void update_ben_motion(int timestamp_scene) {
@@ -948,7 +1002,7 @@ void draw_path(int cameraIndex) {
 
 	ModelViewMatrix = ViewMatrix[cameraIndex] * _pos;
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
 
 	glBindVertexArray(path_VAO);
@@ -1001,7 +1055,7 @@ void draw_two_hier_obj(Object *obj_ptr1, Object *obj_ptr2, int obj1_instance_ID,
 	glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
 
-	draw_static_object(obj_ptr1, obj1_instance_ID, cameraIndex, 1);
+	draw_static_object(obj_ptr1, obj1_instance_ID, cameraIndex, SHADER_PS);
 
 	obj_ptr2->ModelMatrix[obj2_instance_ID] = glm::translate(_modelMatrix, glm::vec3(0.0f, 0.0f, 8.0f));
 	obj_ptr2->ModelMatrix[obj2_instance_ID] = glm::scale(obj_ptr2->ModelMatrix[obj2_instance_ID], glm::vec3(2.0f, 2.0f, 2.0f));
@@ -1019,7 +1073,7 @@ void draw_two_hier_obj(Object *obj_ptr1, Object *obj_ptr2, int obj1_instance_ID,
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 	glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
 	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
-	draw_static_object(obj_ptr2, obj2_instance_ID, cameraIndex, 1);
+	draw_static_object(obj_ptr2, obj2_instance_ID, cameraIndex, SHADER_PS);
 
 }
 
@@ -1306,25 +1360,31 @@ void prepare_floor(void) { // Draw coordinate axes.
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	material_floor.ambient_color[0] = 0.0f;
-	material_floor.ambient_color[1] = 0.05f;
-	material_floor.ambient_color[2] = 0.0f;
+	/*static_objects[OBJ_TABLE].material[0].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_TABLE].material[0].ambient = glm::vec4(0.1f, 0.3f, 0.1f, 1.0f);
+	static_objects[OBJ_TABLE].material[0].diffuse = glm::vec4(0.4f, 0.6f, 0.3f, 1.0f);
+	static_objects[OBJ_TABLE].material[0].specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	static_objects[OBJ_TABLE].material[0].exponent = 15.0f;*/
+
+	material_floor.ambient_color[0] = 0.1f;
+	material_floor.ambient_color[1] = 0.3f;
+	material_floor.ambient_color[2] = 0.1f;
 	material_floor.ambient_color[3] = 1.0f;
 
 	material_floor.diffuse_color[0] = 0.4f;
-	material_floor.diffuse_color[1] = 0.5f;
-	material_floor.diffuse_color[2] = 0.4f;
+	material_floor.diffuse_color[1] = 0.6f;
+	material_floor.diffuse_color[2] = 0.3f;
 	material_floor.diffuse_color[3] = 1.0f;
 
-	material_floor.specular_color[0] = 0.04f;
-	material_floor.specular_color[1] = 0.7f;
-	material_floor.specular_color[2] = 0.04f;
+	material_floor.specular_color[0] = 0.5f;
+	material_floor.specular_color[1] = 0.5f;
+	material_floor.specular_color[2] = 0.5f;
 	material_floor.specular_color[3] = 1.0f;
 
-	material_floor.specular_exponent = 2.5f;
+	material_floor.specular_exponent = 15.0f;
 
 	material_floor.emissive_color[0] = 0.0f;
-	material_floor.emissive_color[1] = 0.1f;
+	material_floor.emissive_color[1] = 0.0f;
 	material_floor.emissive_color[2] = 0.0f;
 	material_floor.emissive_color[3] = 1.0f;
 }
@@ -1338,7 +1398,7 @@ void set_material_floor(void) {
 	glUniform4fv(loc_material.emissive_color, 1, material_floor.emissive_color);
 }
 
-void draw_floor(int cameraIndex) {
+void draw_floor(int cameraIndex, ShaderType shader_type) {
 	glm::mat3 ModelViewMatrixInvTrans;
 
 	glFrontFace(GL_CCW);
@@ -1347,10 +1407,18 @@ void draw_floor(int cameraIndex) {
 	ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(500.0f, 500.0f, 500.0f));
 	ModelViewProjectionMatrix = ProjectionMatrix[cameraIndex] * ModelViewMatrix;
 
-	ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
-	glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	if (shader_type == SHADER_PS) {
+		ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_PS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewMatrix_PS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_PS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	}
+	else {
+		ModelViewMatrixInvTrans = glm::inverse(glm::transpose(glm::mat3(ModelViewMatrix)));
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_GS, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewMatrix_GS, 1, GL_FALSE, &ModelViewMatrix[0][0]);
+		glUniformMatrix3fv(loc_ModelViewMatrixInvTrans_GS, 1, GL_FALSE, &ModelViewMatrixInvTrans[0][0]);
+	}
 
 	glBindVertexArray(rectangle_VAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);

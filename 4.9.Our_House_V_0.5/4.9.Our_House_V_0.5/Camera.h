@@ -562,20 +562,6 @@ void draw_camera_axex(int index) {
 		glm::mat4 obj = glm::translate(glm::mat4(1), camera[i].pos);
 		glm::mat4 rot = glm::mat4(1);
 
-		//if (camera[i].isViewingVolumeVisible) {
-		//	/*rot[0][0] = camera[i].uaxis.x; rot[1][0] = camera[i].uaxis.y; rot[2][0] = camera[i].uaxis.z;
-		//	rot[0][1] = camera[i].vaxis.x; rot[1][1] = camera[i].vaxis.y; rot[2][1] = camera[i].vaxis.z;
-		//	rot[0][2] = camera[i].naxis.x; rot[1][2] = camera[i].naxis.y; rot[2][2] = camera[i].naxis.z;*/
-		//	rot[0][0] = camera[i].uaxis.x; rot[1][0] = camera[i].vaxis.x; rot[2][0] = camera[i].naxis.x;
-		//	rot[0][1] = camera[i].uaxis.y; rot[1][1] = camera[i].vaxis.y; rot[2][1] = camera[i].naxis.y;
-		//	rot[0][2] = camera[i].uaxis.z; rot[1][2] = camera[i].vaxis.z; rot[2][2] = camera[i].naxis.z;
-
-		//	obj = obj * rot;
-		//	ModelViewMatrix = ViewMatrix[index] * obj;
-		//	ModelViewProjectionMatrix = ProjectionMatrix[index] * ModelViewMatrix;
-		//	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-		//	camera[i].viewingVolume.draw_line();
-		//}
 		glLineWidth(1.0f);
 		rot[0][0] = camera[i].uaxis.x; rot[1][0] = camera[i].vaxis.x; rot[2][0] = camera[i].naxis.x;
 		rot[0][1] = camera[i].uaxis.y; rot[1][1] = camera[i].vaxis.y; rot[2][1] = camera[i].naxis.y;
@@ -584,14 +570,14 @@ void draw_camera_axex(int index) {
 		obj = obj * rot;
 		ModelViewMatrix = ViewMatrix[index] * obj;
 		ModelViewProjectionMatrix = ProjectionMatrix[index] * ModelViewMatrix;
-		glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 		if (camera[i].isViewingVolumeVisible) {
 			camera[i].viewingVolume.draw_line();
 		}
 		
 		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(WC_AXIS_LENGTH*0.5f, WC_AXIS_LENGTH *0.5f, WC_AXIS_LENGTH * 0.5f));
 		ModelViewProjectionMatrix = ProjectionMatrix[index] * ModelViewMatrix;
-		glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
 		glBindVertexArray(VAO_axes);
 		glUniform3fv(loc_primitive_color, 1, axes_color[0]);
@@ -605,7 +591,7 @@ void draw_camera_axex(int index) {
 		ModelViewMatrix = glm::scale(ModelViewMatrix, glm::vec3(1/WC_AXIS_LENGTH*0.5f, 1/WC_AXIS_LENGTH *0.5f, 1/WC_AXIS_LENGTH * 0.5f));
 		ModelViewProjectionMatrix = ProjectionMatrix[index] * ModelViewMatrix;
 		glLineWidth(10.0f);
-		glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix_simple, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 		camera[i].draw_3Ddot();
 		glLineWidth(1.0f);
 		
