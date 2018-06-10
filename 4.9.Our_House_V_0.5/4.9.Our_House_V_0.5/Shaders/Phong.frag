@@ -28,6 +28,11 @@ uniform float u_blind_freq = 90.0f;
 uniform bool u_screen_effect = false;
 uniform float u_screen_width = 0.125f;
 uniform float u_screen_count = 2.0f;
+uniform bool u_additional_effect = false;
+uniform bool u_additional_effect2 = false;
+uniform int u_time;
+uniform vec3 u_obj_pos;
+
 
 const float zero_f = 0.0f;
 const float one_f = 1.0f;
@@ -38,6 +43,10 @@ in vec2 v_position_sc;
 
 layout (location = 0) out vec4 final_color;
 
+float calc_floor(float value, float dest) {
+  return floor( mod (value * dest, 1.0) + 0.5);
+}
+
 vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 	vec4 color_sum;
 	float local_scale_factor, tmp_float; 
@@ -47,7 +56,7 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
  
 	for (int i = 0; i < NUMBER_OF_LIGHTS_SUPPORTED; i++) {
 		if (!u_light[i].light_on) continue;
-
+		
 		local_scale_factor = one_f;
 		if (u_light[i].position.w != zero_f) { // point light source
 			L_EC = u_light[i].position.xyz - P_EC.xyz;
@@ -72,6 +81,8 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 				if (tmp_float >= cos(radians(spot_cutoff_angle))) {
 					if( u_blind_effect ){
 						tmp_float = pow(tmp_float, u_light[i].spot_exponent) * cos(u_blind_freq*acos(tmp_float));
+
+							
 					}
 					else
 						tmp_float = pow(tmp_float, u_light[i].spot_exponent);
@@ -96,14 +107,32 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 				tmp_float = dot(N_EC, H_EC); 
 				if (tmp_float > zero_f) {
 					local_color_sum += u_light[i].specular_color
-										   *u_material.specular_color*pow(tmp_float, u_material.specular_exponent);
+											*u_material.specular_color*pow(tmp_float, u_material.specular_exponent);
+
+					if( u_additional_effect2 && u_light[i].spot_cutoff_angle != 180.0f ){
+						float d = 0.05;
+						float bright = calc_floor(v_position_EC.x, d) + calc_floor(v_position_EC.y, d);
+						if(mod(bright, 2.0) > 0.5 ){
+							local_color_sum.z = 0;
+						}
+						else{
+							local_color_sum.x = 0;
+						}
+					}
 				}
+					
 			}
 			color_sum += local_scale_factor*local_color_sum;
 		}
+		
 	}
+	if( u_additional_effect )
+		if( calc_floor(v_position_EC.y+u_time*1, 0.1) <= 0 )
+			color_sum.x = 0;
  	return color_sum;
 }
+
+
 
 void main(void) {   
 	// final_color = vec4(gl_FragCoord.x/800.0f, gl_FragCoord.y/800.0f, 0.0f, 1.0f); // what is this?
@@ -116,5 +145,6 @@ void main(void) {
 			(y_mod > u_screen_width) && (y_mod < 1.0f-u_screen_width) )
 			discard;
 	}
-   final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
+	final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
+    
 }

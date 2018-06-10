@@ -46,6 +46,7 @@ typedef struct _CAMERA {
 	glm::vec3 uaxis, vaxis, naxis;
 	float fov_y, aspect_ratio, near_clip, far_clip;
 	int move_status;
+	int right_key_status;
 	int rotateDirection;
 
 	bool isViewingVolumeVisible = true;

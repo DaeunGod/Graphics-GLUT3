@@ -20,12 +20,19 @@ GLint loc_blind_effect;
 GLint loc_blind_freq;
 GLint loc_screen_effect;
 GLint loc_screen_count;
+GLint loc_time;
+GLint loc_additional_effect;
+GLint loc_additional_effect2;
+GLint loc_obj_pos;
 
 int flag_blind_effect = false;
 float blind_freq = 90.0f;
 
 int flag_screen_effect = false;
 float screen_count = 2.0f;
+
+int flag_additional_effect = false;
+int flag_additional_effect2 = false;
 
 //GLint &loc_ModelViewProjectionMatrix = loc_ModelViewProjectionMatrix_simple;
 
@@ -90,7 +97,7 @@ typedef struct _VIEWPORT {
 VIEWPORT viewport[NUMBER_OF_CAMERAS];
 
 typedef struct _CALLBACK_CONTEXT {
-	int left_button_status, rotation_mode_cow, timestamp_cow;
+	int left_button_status, right_button_status, rotation_mode_cow, timestamp_cow;
 	int prevx, prevy;
 	float rotation_angle_cow;
 } CALLBACK_CONTEXT;
@@ -100,13 +107,14 @@ bool orthoOrPerspective = false;
 bool showViewingVolume = true;
 
 
-bool keyState[108] = { 0 };
+bool keyState[130] = { 0 };
 void initialize_camera(void);
 void motion(int x, int y);
 void mousepress(int button, int state, int x, int y);
 void mousewheel(int button, int dir, int x, int y);
 void keySpecialOperation();
 void timer_scene4(int timestamp_scene);
+void set_shader_change();
 //void prepare_geom_obj(int geom_obj_ID, char *filename, GEOM_OBJ_TYPE geom_obj_type);
 
 void set_ViewMatrix_from_camera_frame(glm::mat4 &_ViewMatrix, CAMERA &_camera) {
@@ -178,19 +186,16 @@ void display(void) {
 		draw_camera_axex(i);
 		glLineWidth(1.0f);
 
-		
-		
-
 		if(shader_Type == SHADER_PS)
 			glUseProgram(h_ShaderProgram_PS);
 		else
 			glUseProgram(h_ShaderProgram_GS);
 
 		set_light_position(i);
-
+		set_light_dir(i, 7);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		draw_static_object(&(static_objects[OBJ_BUILDING]), 0, i, shader_Type);
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		set_material_floor();
 
 		if (shader_Type == SHADER_PS)
@@ -198,9 +203,13 @@ void display(void) {
 		draw_floor(i, shader_Type);
 		glUniform1i(loc_screen_effect, 0);
 
+		glUniform1i(loc_additional_effect, flag_additional_effect);
 		draw_static_object(&(static_objects[OBJ_TABLE]), 0, i, shader_Type);
 		draw_static_object(&(static_objects[OBJ_TABLE]), 1, i, shader_Type);
+		
+		//glUniform3f(loc_obj_pos, static_objects[OBJ_TABLE].pos[2].x, static_objects[OBJ_TABLE].pos[2].y, static_objects[OBJ_TABLE].pos[2].z);
 		draw_static_object(&(static_objects[OBJ_TABLE]), 2, i, shader_Type);
+		
 		draw_static_object(&(static_objects[OBJ_TABLE]), 3, i, shader_Type);
 		
 		
@@ -219,9 +228,16 @@ void display(void) {
 		draw_static_object(&(static_objects[OBJ_FRAME]), 0, i, shader_Type);
 		draw_static_object(&(static_objects[OBJ_NEW_PICTURE]), 0, i, shader_Type);
 		draw_static_object(&(static_objects[OBJ_COW]), 1, i, shader_Type);
-
 		draw_spider(i, shader_Type);
+
 		draw_animated_tiger(i, shader_Type);
+		
+		glUseProgram(h_ShaderProgram_PS);
+		glUniform1i(loc_additional_effect, 0);
+
+		
+		
+		
 		//draw_ben(i);
 		//
 		//draw_two_hier_obj(&(static_objects[OBJ_TABLE]), &(static_objects[OBJ_TEAPOT]), 2, 1, i);
@@ -268,7 +284,7 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		}
 		break;
-	/*case 'f':
+	case 'f':
 		polygon_fill_on = 1 - polygon_fill_on;
 		if (polygon_fill_on) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -279,7 +295,7 @@ void keyboard(unsigned char key, int x, int y) {
 			fprintf(stdout, "^^^ Line drawing enabled.\n");
 		}
 		glutPostRedisplay();
-		break;*/
+		break;
 	/*case 'd':
 		depth_test_on = 1 - depth_test_on;
 		if (depth_test_on) {
@@ -421,16 +437,7 @@ void keyboard(unsigned char key, int x, int y) {
 
 		break;
 	case '2':
-		//currentCamera = CAMERA_PERSPECTIVE4;
-		//set_ViewMatrix_from_camera_frame(ViewMatrix[CAMERA_MAIN], camera[CAMERA_PERSPECTIVE4]);
-		//ProjectionMatrix[0] = glm::perspective(camera[CAMERA_PERSPECTIVE4].fov_y*TO_RADIAN, camera[CAMERA_PERSPECTIVE4].aspect_ratio, camera[CAMERA_PERSPECTIVE4].near_clip, camera[CAMERA_PERSPECTIVE4].far_clip);
-		//camera[CAMERA_PERSPECTIVE4].rotateDirection = 0;
-		if (shader_Type == SHADER_PS) {
-			shader_Type = SHADER_GS;
-		}
-		else
-			shader_Type = SHADER_PS;
-		//set_up_scene_lights();
+		
 		break;
 
 	case '3':
@@ -496,11 +503,20 @@ void keyboard(unsigned char key, int x, int y) {
 
 		break;
 	case 'r':
-
 		flag_screen_effect = !flag_screen_effect;
 
 		break;
+	case 't':
+		flag_additional_effect = !flag_additional_effect;
 
+		break;
+
+	case 'g':
+		flag_additional_effect2 = !flag_additional_effect2;
+		glUseProgram(h_ShaderProgram_PS);
+		glUniform1f(loc_additional_effect2, flag_additional_effect2);
+		glUseProgram(0);
+		break;
 		
 	}
 
@@ -509,6 +525,9 @@ void keyboard(unsigned char key, int x, int y) {
 
 void keySpecial(int key, int x, int y) {
 	switch (key) {
+	case GLUT_KEY_SHIFT_L:
+		keyState[GLUT_KEY_SHIFT_L] = true;
+		break;
 	case GLUT_KEY_LEFT:
 		keyState[GLUT_KEY_LEFT] = true;
 		glutPostRedisplay();
@@ -530,6 +549,9 @@ void keySpecial(int key, int x, int y) {
 
 void keySpecialUp(int key, int x, int y) {
 	switch (key) {
+	case GLUT_KEY_SHIFT_L:
+		keyState[GLUT_KEY_SHIFT_L] = false;
+		break;
 	case GLUT_KEY_LEFT:
 		keyState[GLUT_KEY_LEFT] = false;
 		glutPostRedisplay();
@@ -550,6 +572,19 @@ void keySpecialUp(int key, int x, int y) {
 }
 
 void keySpecialOperation() {
+	if (shader_Type != SHADER_PS) {
+		shader_Type = SHADER_PS;
+		set_shader_change();
+	}
+	if (keyState[GLUT_KEY_SHIFT_L] == true) {
+		if (camera[currentCamera].right_key_status) {
+			if (shader_Type != SHADER_GS) {
+				shader_Type = SHADER_GS;
+				set_shader_change();
+			}
+		}
+		//path_pos += glm::vec3(1.0f, 0.0f, 0.0f);
+	}
 	if (keyState[GLUT_KEY_LEFT] == true) {
 		//path_pos += glm::vec3(1.0f, 0.0f, 0.0f);
 	}
@@ -711,6 +746,9 @@ void timer_scene(int timestamp_scene) {
 		}
 	}
 
+	glUseProgram(h_ShaderProgram_PS);
+	glUniform1i(loc_time, timestamp_scene + 30);
+	glUseProgram(0);
 	glutPostRedisplay();
 	glutTimerFunc(100, timer_scene, (timestamp_scene + 1) % INT_MAX);
 }
@@ -720,6 +758,10 @@ void timer_scene2(int timestamp_scene) {
 	update_table_motion(timestamp_scene);
 	tiger_data.cur_frame = timestamp_scene % N_TIGER_FRAMES;
 	update_tiger_motion(timestamp_scene);
+	update_light_motion(6);
+
+	
+
 	glutPostRedisplay();
 	glutTimerFunc(10, timer_scene2, (timestamp_scene + 1) % INT_MAX);
 }
@@ -743,8 +785,6 @@ void timer_scene4(int timestamp_scene) {
 		for (int i = 0; i < NUMBER_OF_CAMERAS - 1; i++) {
 			set_ViewMatrix_from_camera_frame(ViewMatrix[i], camera[i]);
 		}
-		
-
 		return ;
 	}
 
@@ -776,6 +816,14 @@ void mousepress(int button, int state, int x, int y) {
 			camera[currentCamera].move_status = 0;
 		}
 	}
+	else if ((button == GLUT_RIGHT_BUTTON)) {
+		if (state == GLUT_DOWN) {
+			camera[currentCamera].right_key_status = 1;
+		}
+		else if (state == GLUT_UP) {
+			camera[currentCamera].right_key_status = 0;
+		}
+	}
 }
 
 void mousewheel(int button, int dir, int x, int y) {
@@ -796,12 +844,12 @@ void mousewheel(int button, int dir, int x, int y) {
 void motion(int x, int y) {
 	float delx, dely;
 
-	if (!camera[currentCamera].move_status) return;
-
 	delx = (float)(x - cc.prevx); dely = (float)(cc.prevy - y);
 	cc.prevx = x; cc.prevy = y;
 
 	int modifer_status = glutGetModifiers();
+
+	if (!camera[currentCamera].move_status) return;
 
 	switch (modifer_status) { // you may define the key combinations yourself.
 	case GLUT_ACTIVE_SHIFT:
@@ -838,7 +886,7 @@ void motion(int x, int y) {
 		break;
 	}
 	set_ViewMatrix_from_camera_frame(ViewMatrix[0], camera[currentCamera]);
-	glutPostRedisplay();
+	//glutPostRedisplay();
 }
 
 void prepare_shader_program(void) {
@@ -863,6 +911,39 @@ void prepare_shader_program(void) {
 	h_ShaderProgram_simple = LoadShaders(shader_info_simple);
 	loc_primitive_color = glGetUniformLocation(h_ShaderProgram_simple, "u_primitive_color");
 	loc_ModelViewProjectionMatrix_simple = glGetUniformLocation(h_ShaderProgram_simple, "u_ModelViewProjectionMatrix");
+
+	h_ShaderProgram_GS = LoadShaders(shader_info_GS);
+	loc_ModelViewProjectionMatrix_GS = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewProjectionMatrix");
+	loc_ModelViewMatrix_GS = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewMatrix");
+	loc_ModelViewMatrixInvTrans_GS = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewMatrixInvTrans");
+
+	/*loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_GS, "u_global_ambient_color");
+	for (i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+		sprintf(string, "u_light[%d].light_on", i);
+		loc_light[i].light_on = glGetUniformLocation(h_ShaderProgram_GS, string);
+		sprintf(string, "u_light[%d].position", i);
+		loc_light[i].position = glGetUniformLocation(h_ShaderProgram_GS, string);
+		sprintf(string, "u_light[%d].ambient_color", i);
+		loc_light[i].ambient_color = glGetUniformLocation(h_ShaderProgram_GS, string);
+		sprintf(string, "u_light[%d].diffuse_color", i);
+		loc_light[i].diffuse_color = glGetUniformLocation(h_ShaderProgram_GS, string);
+		sprintf(string, "u_light[%d].specular_color", i);
+		loc_light[i].specular_color = glGetUniformLocation(h_ShaderProgram_GS, string);
+		sprintf(string, "u_light[%d].spot_direction", i);
+		loc_light[i].spot_direction = glGetUniformLocation(h_ShaderProgram_GS, string);
+		sprintf(string, "u_light[%d].spot_exponent", i);
+		loc_light[i].spot_exponent = glGetUniformLocation(h_ShaderProgram_GS, string);
+		sprintf(string, "u_light[%d].spot_cutoff_angle", i);
+		loc_light[i].spot_cutoff_angle = glGetUniformLocation(h_ShaderProgram_GS, string);
+		sprintf(string, "u_light[%d].light_attenuation_factors", i);
+		loc_light[i].light_attenuation_factors = glGetUniformLocation(h_ShaderProgram_GS, string);
+	}
+
+	loc_material.ambient_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.ambient_color");
+	loc_material.diffuse_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.diffuse_color");
+	loc_material.specular_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_color");
+	loc_material.emissive_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.emissive_color");
+	loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_exponent");*/
 
 	h_ShaderProgram_PS = LoadShaders(shader_info_PS);
 	loc_ModelViewProjectionMatrix_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewProjectionMatrix");
@@ -901,43 +982,148 @@ void prepare_shader_program(void) {
 	loc_blind_freq = glGetUniformLocation(h_ShaderProgram_PS, "u_blind_freq");
 	loc_screen_effect = glGetUniformLocation(h_ShaderProgram_PS, "u_screen_effect");
 	loc_screen_count = glGetUniformLocation(h_ShaderProgram_PS, "u_screen_count");
-
-	h_ShaderProgram_GS = LoadShaders(shader_info_GS);
-	loc_ModelViewProjectionMatrix_GS = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewProjectionMatrix");
-	loc_ModelViewMatrix_GS = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewMatrix");
-	loc_ModelViewMatrixInvTrans_GS = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewMatrixInvTrans");
-
-	loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_GS, "u_global_ambient_color");
-	for (i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
-		sprintf(string, "u_light[%d].light_on", i);
-		loc_light[i].light_on = glGetUniformLocation(h_ShaderProgram_GS, string);
-		sprintf(string, "u_light[%d].position", i);
-		loc_light[i].position = glGetUniformLocation(h_ShaderProgram_GS, string);
-		sprintf(string, "u_light[%d].ambient_color", i);
-		loc_light[i].ambient_color = glGetUniformLocation(h_ShaderProgram_GS, string);
-		sprintf(string, "u_light[%d].diffuse_color", i);
-		loc_light[i].diffuse_color = glGetUniformLocation(h_ShaderProgram_GS, string);
-		sprintf(string, "u_light[%d].specular_color", i);
-		loc_light[i].specular_color = glGetUniformLocation(h_ShaderProgram_GS, string);
-		sprintf(string, "u_light[%d].spot_direction", i);
-		loc_light[i].spot_direction = glGetUniformLocation(h_ShaderProgram_GS, string);
-		sprintf(string, "u_light[%d].spot_exponent", i);
-		loc_light[i].spot_exponent = glGetUniformLocation(h_ShaderProgram_GS, string);
-		sprintf(string, "u_light[%d].spot_cutoff_angle", i);
-		loc_light[i].spot_cutoff_angle = glGetUniformLocation(h_ShaderProgram_GS, string);
-		sprintf(string, "u_light[%d].light_attenuation_factors", i);
-		loc_light[i].light_attenuation_factors = glGetUniformLocation(h_ShaderProgram_GS, string);
-	}
-
-	loc_material.ambient_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.ambient_color");
-	loc_material.diffuse_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.diffuse_color");
-	loc_material.specular_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_color");
-	loc_material.emissive_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.emissive_color");
-	loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_exponent");
-
+	loc_time = glGetUniformLocation(h_ShaderProgram_PS, "u_time");
+	loc_additional_effect = glGetUniformLocation(h_ShaderProgram_PS, "u_additional_effect");
+	loc_obj_pos = glGetUniformLocation(h_ShaderProgram_PS, "u_obj_pos");
+	loc_additional_effect2 = glGetUniformLocation(h_ShaderProgram_PS, "u_additional_effect2");
 }
 
+void set_shader_change() {
+	int i;
+	char string[256];
+	if (shader_Type == SHADER_GS) {
+		loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_GS, "u_global_ambient_color");
+		for (i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+			sprintf(string, "u_light[%d].light_on", i);
+			loc_light[i].light_on = glGetUniformLocation(h_ShaderProgram_GS, string);
+			sprintf(string, "u_light[%d].position", i);
+			loc_light[i].position = glGetUniformLocation(h_ShaderProgram_GS, string);
+			sprintf(string, "u_light[%d].ambient_color", i);
+			loc_light[i].ambient_color = glGetUniformLocation(h_ShaderProgram_GS, string);
+			sprintf(string, "u_light[%d].diffuse_color", i);
+			loc_light[i].diffuse_color = glGetUniformLocation(h_ShaderProgram_GS, string);
+			sprintf(string, "u_light[%d].specular_color", i);
+			loc_light[i].specular_color = glGetUniformLocation(h_ShaderProgram_GS, string);
+			sprintf(string, "u_light[%d].spot_direction", i);
+			loc_light[i].spot_direction = glGetUniformLocation(h_ShaderProgram_GS, string);
+			sprintf(string, "u_light[%d].spot_exponent", i);
+			loc_light[i].spot_exponent = glGetUniformLocation(h_ShaderProgram_GS, string);
+			sprintf(string, "u_light[%d].spot_cutoff_angle", i);
+			loc_light[i].spot_cutoff_angle = glGetUniformLocation(h_ShaderProgram_GS, string);
+			sprintf(string, "u_light[%d].light_attenuation_factors", i);
+			loc_light[i].light_attenuation_factors = glGetUniformLocation(h_ShaderProgram_GS, string);
+		}
 
+		loc_material.ambient_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.ambient_color");
+		loc_material.diffuse_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.diffuse_color");
+		loc_material.specular_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_color");
+		loc_material.emissive_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.emissive_color");
+		loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_exponent");
+		glUseProgram(h_ShaderProgram_GS);
+	}
+	else {
+		loc_global_ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_global_ambient_color");
+		for (i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+			sprintf(string, "u_light[%d].light_on", i);
+			loc_light[i].light_on = glGetUniformLocation(h_ShaderProgram_PS, string);
+			sprintf(string, "u_light[%d].position", i);
+			loc_light[i].position = glGetUniformLocation(h_ShaderProgram_PS, string);
+			sprintf(string, "u_light[%d].ambient_color", i);
+			loc_light[i].ambient_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+			sprintf(string, "u_light[%d].diffuse_color", i);
+			loc_light[i].diffuse_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+			sprintf(string, "u_light[%d].specular_color", i);
+			loc_light[i].specular_color = glGetUniformLocation(h_ShaderProgram_PS, string);
+			sprintf(string, "u_light[%d].spot_direction", i);
+			loc_light[i].spot_direction = glGetUniformLocation(h_ShaderProgram_PS, string);
+			sprintf(string, "u_light[%d].spot_exponent", i);
+			loc_light[i].spot_exponent = glGetUniformLocation(h_ShaderProgram_PS, string);
+			sprintf(string, "u_light[%d].spot_cutoff_angle", i);
+			loc_light[i].spot_cutoff_angle = glGetUniformLocation(h_ShaderProgram_PS, string);
+			sprintf(string, "u_light[%d].light_attenuation_factors", i);
+			loc_light[i].light_attenuation_factors = glGetUniformLocation(h_ShaderProgram_PS, string);
+		}
+
+		loc_material.ambient_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.ambient_color");
+		loc_material.diffuse_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.diffuse_color");
+		loc_material.specular_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.specular_color");
+		loc_material.emissive_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.emissive_color");
+		loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_PS, "u_material.specular_exponent");
+
+		loc_blind_effect = glGetUniformLocation(h_ShaderProgram_PS, "u_blind_effect");
+		loc_blind_freq = glGetUniformLocation(h_ShaderProgram_PS, "u_blind_freq");
+		loc_screen_effect = glGetUniformLocation(h_ShaderProgram_PS, "u_screen_effect");
+		loc_screen_count = glGetUniformLocation(h_ShaderProgram_PS, "u_screen_count");
+		loc_time = glGetUniformLocation(h_ShaderProgram_PS, "u_time");
+		loc_additional_effect = glGetUniformLocation(h_ShaderProgram_PS, "u_additional_effect");
+		loc_obj_pos = glGetUniformLocation(h_ShaderProgram_PS, "u_obj_pos");
+		loc_additional_effect2 = glGetUniformLocation(h_ShaderProgram_PS, "u_additional_effect2");
+		glUseProgram(h_ShaderProgram_PS);
+
+		glUniform1i(loc_blind_effect, flag_blind_effect);
+		glUniform1f(loc_blind_freq, 90.0f);
+		glUniform1i(loc_screen_effect, flag_screen_effect);
+		glUniform1f(loc_screen_count, 2.0f);
+		glUniform1i(loc_time, 0);
+		glUniform1i(loc_additional_effect, flag_additional_effect);
+		glUniform3f(loc_obj_pos, 0, 0, 0);
+		glUniform1i(loc_additional_effect2, flag_additional_effect2);
+	}
+
+	glUniform4f(loc_global_ambient_color, 0.2f, 0.2f, 0.2f, 1.0f);
+	for (i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+		glUniform1i(loc_light[i].light_on, 0); // turn off all lights initially
+		glUniform4f(loc_light[i].position, 0.0f, 0.0f, 1.0f, 0.0f);
+		glUniform4f(loc_light[i].ambient_color, 0.0f, 0.0f, 0.0f, 1.0f);
+		if (i == 0) {
+			glUniform4f(loc_light[i].diffuse_color, 1.0f, 1.0f, 1.0f, 1.0f);
+			glUniform4f(loc_light[i].specular_color, 1.0f, 1.0f, 1.0f, 1.0f);
+		}
+		else {
+			glUniform4f(loc_light[i].diffuse_color, 0.0f, 0.0f, 0.0f, 1.0f);
+			glUniform4f(loc_light[i].specular_color, 0.0f, 0.0f, 0.0f, 1.0f);
+		}
+		glUniform3f(loc_light[i].spot_direction, 0.0f, 0.0f, -1.0f);
+		glUniform1f(loc_light[i].spot_exponent, 0.0f); // [0.0, 128.0]
+		glUniform1f(loc_light[i].spot_cutoff_angle, 180.0f); // [0.0, 90.0] or 180.0 (180.0 for no spot light effect)
+		glUniform4f(loc_light[i].light_attenuation_factors, 1.0f, 0.0f, 0.0f, 0.0f); // .w != 0.0f for no ligth attenuation
+	}
+
+	glUniform4f(loc_material.ambient_color, 0.2f, 0.2f, 0.2f, 1.0f);
+	glUniform4f(loc_material.diffuse_color, 0.8f, 0.8f, 0.8f, 1.0f);
+	glUniform4f(loc_material.specular_color, 0.0f, 0.0f, 0.0f, 1.0f);
+	glUniform4f(loc_material.emissive_color, 0.0f, 0.0f, 0.0f, 1.0f);
+	glUniform1f(loc_material.specular_exponent, 0.0f); // [0.0, 128.0]
+
+	for (int i = 0; i < 1; i++) {
+		glUniform1i(loc_light[i].light_on, light[i].light_on);
+		glUniform4fv(loc_light[i].position, 1, light[i].position);
+		glUniform4fv(loc_light[i].ambient_color, 1, light[i].ambient_color);
+		glUniform4fv(loc_light[i].diffuse_color, 1, light[i].diffuse_color);
+		glUniform4fv(loc_light[i].specular_color, 1, light[i].specular_color);
+	}
+
+	for (int i = 1; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+		glUniform1i(loc_light[i].light_on, light[i].light_on);
+		// need to supply position in EC for shading
+		glm::vec4 position_EC = ViewMatrix[0] * glm::vec4(light[i].position[0], light[i].position[1],
+			light[i].position[2], light[i].position[3]);
+		glUniform4fv(loc_light[i].position, 1, &position_EC[0]);
+		glUniform4fv(loc_light[i].ambient_color, 1, light[i].ambient_color);
+		glUniform4fv(loc_light[i].diffuse_color, 1, light[i].diffuse_color);
+		glUniform4fv(loc_light[i].specular_color, 1, light[i].specular_color);
+		// need to supply direction in EC for shading in this example shader
+		// note that the viewing transform is a rigid body transform
+		// thus transpose(inverse(mat3(ViewMatrix)) = mat3(ViewMatrix)
+		glm::vec3 direction_EC = glm::mat3(ViewMatrix[0]) * glm::vec3(light[i].spot_direction[0], light[i].spot_direction[1],
+			light[i].spot_direction[2]);
+		//glm::vec3 direction_EC = glm::vec3(light[1].spot_direction[0], light[1].spot_direction[1], light[1].spot_direction[2]);
+		glUniform3fv(loc_light[i].spot_direction, 1, &direction_EC[0]);
+		glUniform1f(loc_light[i].spot_cutoff_angle, light[i].spot_cutoff_angle);
+		glUniform1f(loc_light[i].spot_exponent, light[i].spot_exponent);
+	}
+	glUseProgram(0);
+}
 
 void initialize_OpenGL(void) {
 	initialize_camera();

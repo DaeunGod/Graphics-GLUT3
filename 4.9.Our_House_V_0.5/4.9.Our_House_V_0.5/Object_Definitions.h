@@ -192,14 +192,14 @@ void define_static_objects(void) {
 
 	static_objects[OBJ_TABLE].n_geom_instances = 4;
 
-	static_objects[OBJ_TABLE].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(157.0f, 76.5f, 0.0f));
+	static_objects[OBJ_TABLE].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(45.0f, 96.5f, 0.0f));
 	static_objects[OBJ_TABLE].ModelMatrix[0] = glm::scale(static_objects[OBJ_TABLE].ModelMatrix[0], 
 		glm::vec3(0.5f, 0.5f, 0.5f));
 
 	static_objects[OBJ_TABLE].material[0].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	static_objects[OBJ_TABLE].material[0].ambient = glm::vec4(0.1f, 0.3f, 0.1f, 1.0f);
-	static_objects[OBJ_TABLE].material[0].diffuse = glm::vec4(0.4f, 0.6f, 0.3f, 1.0f);
-	static_objects[OBJ_TABLE].material[0].specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	static_objects[OBJ_TABLE].material[0].ambient = glm::vec4(0.25f, 0.20725f, 0.20725f, 1.0f);
+	static_objects[OBJ_TABLE].material[0].diffuse = glm::vec4(1.0f, 0.829f, 0.829f, 1.0f);
+	static_objects[OBJ_TABLE].material[0].specular = glm::vec4(0.296648f, 0.296648f, 0.296648f, 1.0f);
 	static_objects[OBJ_TABLE].material[0].exponent = 15.0f;
 
 	static_objects[OBJ_TABLE].ModelMatrix[1] = glm::translate(glm::mat4(1.0f), glm::vec3(198.0f, 120.0f, 0.0f));
@@ -229,9 +229,9 @@ void define_static_objects(void) {
 		glm::vec3(0.8f, 0.6f, 0.6f));
 
 	static_objects[OBJ_TABLE].material[3].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	static_objects[OBJ_TABLE].material[3].ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
-	static_objects[OBJ_TABLE].material[3].diffuse = glm::vec4(186.0f / 255.0f, 68.0f / 255.0f, 255.0f / 255.0f, 1.0f);
-	static_objects[OBJ_TABLE].material[3].specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	static_objects[OBJ_TABLE].material[3].ambient = glm::vec4(0.19225f, 0.19225f, 0.19225f, 1.0f);
+	static_objects[OBJ_TABLE].material[3].diffuse = glm::vec4(0.50754f, 0.50754f, 0.50754f, 1.0f);
+	static_objects[OBJ_TABLE].material[3].specular = glm::vec4(0.508273f, 0.508273f, 0.508273f, 1.0f);
 	static_objects[OBJ_TABLE].material[3].exponent = 128.0f*0.078125f;
 
 	// Light
@@ -306,11 +306,13 @@ void define_static_objects(void) {
 	static_objects[OBJ_LIGHT].material[5].specular = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
 	static_objects[OBJ_LIGHT].material[5].exponent = 128.0f*0.4f;
 
-	static_objects[OBJ_LIGHT].pos[6] = glm::vec3(38.0f, 154.0f, 49.0f);
+	static_objects[OBJ_LIGHT].pos[6] = glm::vec3(12.0f, 84.0f, 29.0f);
 	static_objects[OBJ_LIGHT].ModelMatrix[6] = glm::translate(glm::mat4(1.0f), static_objects[OBJ_LIGHT].pos[6]);
 	static_objects[OBJ_LIGHT].ModelMatrix[6] = glm::scale(static_objects[OBJ_LIGHT].ModelMatrix[6], glm::vec3(1.0f, -1.0f, 1.0f));
 	static_objects[OBJ_LIGHT].ModelMatrix[6] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[6],
 		180.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	static_objects[OBJ_LIGHT].ModelMatrix[6] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[6],
+		-90.0f*TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 
 
 	static_objects[OBJ_LIGHT].material[6].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -318,7 +320,7 @@ void define_static_objects(void) {
 	static_objects[OBJ_LIGHT].material[6].diffuse = glm::vec4(0.75164f, 0.60648f, 0.22648f, 1.0f);
 	static_objects[OBJ_LIGHT].material[6].specular = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
 	static_objects[OBJ_LIGHT].material[6].exponent = 128.0f*0.4f;
-
+	static_objects[OBJ_LIGHT].rotationAngle[6] = -45.0f;
 
 
 	// teapot
@@ -1108,6 +1110,14 @@ void update_table_motion(int timestamp_scene) {
 	static_objects[OBJ_TABLE].ModelMatrix[3] = glm::translate(static_objects[OBJ_TABLE].ModelMatrix[3], -static_objects[OBJ_TABLE].pos[3]);
 	static_objects[OBJ_TABLE].ModelMatrix[3] = glm::scale(static_objects[OBJ_TABLE].ModelMatrix[3],
 		glm::vec3(0.4f, 0.3f, 0.3f));
+
+	static_objects[OBJ_TABLE].pos[0] = glm::vec3(45.0f, 96.5f, 0.0f);
+	static_objects[OBJ_TABLE].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), static_objects[OBJ_TABLE].pos[0]);
+	static_objects[OBJ_TABLE].ModelMatrix[0] = glm::scale(static_objects[OBJ_TABLE].ModelMatrix[0], glm::vec3(0.5f, 0.5f, 0.5f));
+	static_objects[OBJ_TABLE].ModelMatrix[0] = glm::rotate(static_objects[OBJ_TABLE].ModelMatrix[0],
+		static_objects[OBJ_TABLE].rotationAngle[0] * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	static_objects[OBJ_TABLE].rotationAngle[0] += 1.0f;
 	
 }
 
@@ -1328,6 +1338,34 @@ void update_tiger_motion(int timestamp_scene) {
 	}
 }
 
+void update_light_motion(int instanceID) {
+	static bool flg = 0;
+
+	glm::vec3 _pos = glm::vec3(12.0f, 84.0f, 29.0f);
+	
+	static_objects[OBJ_LIGHT].pos[instanceID] = glm::vec3(12.0f, 84.0f, 29.0f);
+	static_objects[OBJ_LIGHT].ModelMatrix[instanceID] = glm::translate(glm::mat4(1.0f), static_objects[OBJ_LIGHT].pos[instanceID]);
+	static_objects[OBJ_LIGHT].ModelMatrix[instanceID] = glm::scale(static_objects[OBJ_LIGHT].ModelMatrix[instanceID], glm::vec3(1.0f, -1.0f, 1.0f));
+	static_objects[OBJ_LIGHT].ModelMatrix[instanceID] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[instanceID],
+		180.0f*TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	static_objects[OBJ_LIGHT].ModelMatrix[instanceID] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[instanceID],
+		-45.0f*TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	static_objects[OBJ_LIGHT].ModelMatrix[instanceID] = glm::rotate(static_objects[OBJ_LIGHT].ModelMatrix[instanceID],
+		(-90.0f+ static_objects[OBJ_LIGHT].rotationAngle[instanceID])*TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	if (flg == 0) {
+		static_objects[OBJ_LIGHT].rotationAngle[instanceID] += 1.0f;
+		if (static_objects[OBJ_LIGHT].rotationAngle[instanceID] > 45.0f) {
+			flg = 1;
+		}
+	}
+	else {
+		static_objects[OBJ_LIGHT].rotationAngle[instanceID] -= 1.0f;
+		if (static_objects[OBJ_LIGHT].rotationAngle[instanceID] < -45.0f) {
+			flg = 0;
+		}
+	}
+}
 
 GLuint rectangle_VBO, rectangle_VAO;
 GLfloat rectangle_vertices[12][3] = {  // vertices enumerated counterclockwise
