@@ -46,8 +46,13 @@ void initialize_lights_and_material(void) { // follow OpenGL conventions for ini
 	glUniform4f(loc_material.emissive_color, 0.0f, 0.0f, 0.0f, 1.0f);
 	glUniform1f(loc_material.specular_exponent, 0.0f); // [0.0, 128.0]
 
-	glUseProgram(h_ShaderProgram_GS);
+	glUniform1i(loc_blind_effect, 0);
+	glUniform1f(loc_blind_freq, 90.0f);
+	glUniform1i(loc_screen_effect, 0);
+	glUniform1f(loc_screen_count, 2.0f);
+	glUseProgram(0);
 
+	glUseProgram(h_ShaderProgram_GS);
 	glUniform4f(loc_global_ambient_color, 0.2f, 0.2f, 0.2f, 1.0f);
 	for (i = 0; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
 		glUniform1i(loc_light[i].light_on, 0); // turn off all lights initially
@@ -76,7 +81,7 @@ void initialize_lights_and_material(void) { // follow OpenGL conventions for ini
 	glUseProgram(0);
 }
 
-void set_up_scene_lights(ShaderType shadertype) {
+void set_up_scene_lights(void) {
 	// point_light_WC: use light 0
 	light[0].light_on = 1;
 	light[0].position[0] = 0.0f; light[0].position[1] = 10.0f; 	// point light position in EC
@@ -224,11 +229,8 @@ void set_up_scene_lights(ShaderType shadertype) {
 	light[7].spot_cutoff_angle = 45.0f;
 	light[7].spot_exponent = 27.0f;
 
-	if(shadertype == SHADER_PS)
-		glUseProgram(h_ShaderProgram_PS);
-	else
-		glUseProgram(h_ShaderProgram_GS);
-
+	
+	glUseProgram(h_ShaderProgram_GS);
 	for (int i = 0; i < 1; i++) {
 		glUniform1i(loc_light[i].light_on, light[i].light_on);
 		glUniform4fv(loc_light[i].position, 1, light[i].position);
@@ -257,4 +259,36 @@ void set_up_scene_lights(ShaderType shadertype) {
 		glUniform1f(loc_light[i].spot_exponent, light[i].spot_exponent);
 	}
 	glUseProgram(0);
+
+	glUseProgram(h_ShaderProgram_PS);
+	for (int i = 0; i < 1; i++) {
+		glUniform1i(loc_light[i].light_on, light[i].light_on);
+		glUniform4fv(loc_light[i].position, 1, light[i].position);
+		glUniform4fv(loc_light[i].ambient_color, 1, light[i].ambient_color);
+		glUniform4fv(loc_light[i].diffuse_color, 1, light[i].diffuse_color);
+		glUniform4fv(loc_light[i].specular_color, 1, light[i].specular_color);
+	}
+
+	for (int i = 1; i < NUMBER_OF_LIGHT_SUPPORTED; i++) {
+		glUniform1i(loc_light[i].light_on, light[i].light_on);
+		// need to supply position in EC for shading
+		glm::vec4 position_EC = ViewMatrix[0] * glm::vec4(light[i].position[0], light[i].position[1],
+			light[i].position[2], light[i].position[3]);
+		glUniform4fv(loc_light[i].position, 1, &position_EC[0]);
+		glUniform4fv(loc_light[i].ambient_color, 1, light[i].ambient_color);
+		glUniform4fv(loc_light[i].diffuse_color, 1, light[i].diffuse_color);
+		glUniform4fv(loc_light[i].specular_color, 1, light[i].specular_color);
+		// need to supply direction in EC for shading in this example shader
+		// note that the viewing transform is a rigid body transform
+		// thus transpose(inverse(mat3(ViewMatrix)) = mat3(ViewMatrix)
+		glm::vec3 direction_EC = glm::mat3(ViewMatrix[0]) * glm::vec3(light[i].spot_direction[0], light[i].spot_direction[1],
+			light[i].spot_direction[2]);
+		//glm::vec3 direction_EC = glm::vec3(light[1].spot_direction[0], light[1].spot_direction[1], light[1].spot_direction[2]);
+		glUniform3fv(loc_light[i].spot_direction, 1, &direction_EC[0]);
+		glUniform1f(loc_light[i].spot_cutoff_angle, light[i].spot_cutoff_angle);
+		glUniform1f(loc_light[i].spot_exponent, light[i].spot_exponent);
+	}
+	glUseProgram(0);
+
+	
 }

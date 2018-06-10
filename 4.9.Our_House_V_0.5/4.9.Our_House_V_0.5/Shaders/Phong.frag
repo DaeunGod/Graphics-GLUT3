@@ -23,11 +23,19 @@ uniform vec4 u_global_ambient_color;
 uniform LIGHT u_light[NUMBER_OF_LIGHTS_SUPPORTED];
 uniform MATERIAL u_material;
 
+uniform bool u_blind_effect = false;
+uniform float u_blind_freq = 90.0f;
+uniform bool u_screen_effect = false;
+uniform float u_screen_width = 0.125f;
+uniform float u_screen_count = 2.0f;
+
 const float zero_f = 0.0f;
 const float one_f = 1.0f;
 
 in vec3 v_position_EC;
 in vec3 v_normal_EC;
+in vec2 v_position_sc;
+
 layout (location = 0) out vec4 final_color;
 
 vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
@@ -62,7 +70,11 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 
 				tmp_float = dot(-L_EC, spot_dir);
 				if (tmp_float >= cos(radians(spot_cutoff_angle))) {
-					tmp_float = pow(tmp_float, u_light[i].spot_exponent);
+					if( u_blind_effect ){
+						tmp_float = pow(tmp_float, u_light[i].spot_exponent) * cos(u_blind_freq*acos(tmp_float));
+					}
+					else
+						tmp_float = pow(tmp_float, u_light[i].spot_exponent);
 				}
 				else 
 					tmp_float = zero_f;
@@ -96,6 +108,13 @@ vec4 lighting_equation(in vec3 P_EC, in vec3 N_EC) {
 void main(void) {   
 	// final_color = vec4(gl_FragCoord.x/800.0f, gl_FragCoord.y/800.0f, 0.0f, 1.0f); // what is this?
     // final_color = vec4(0.0f,  0.0f, 1.0 - gl_FragCoord.z/1.0f, 1.0f); // what is this?
-
+	if( u_screen_effect ){
+		float x_mod, y_mod;
+		x_mod = mod(v_position_sc.x*(u_screen_count+1.0f), 1.0f);
+		y_mod = mod(v_position_sc.y*u_screen_count, 1.0f);
+		if( (x_mod > u_screen_width) && (x_mod < 1.0f-u_screen_width) &&
+			(y_mod > u_screen_width) && (y_mod < 1.0f-u_screen_width) )
+			discard;
+	}
    final_color = lighting_equation(v_position_EC, normalize(v_normal_EC)); // for normal rendering
 }

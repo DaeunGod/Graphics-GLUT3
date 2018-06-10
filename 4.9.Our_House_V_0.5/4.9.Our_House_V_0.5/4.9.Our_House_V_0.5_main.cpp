@@ -16,6 +16,16 @@ GLint loc_global_ambient_color;
 loc_light_Parameters loc_light[NUMBER_OF_LIGHT_SUPPORTED];
 loc_Material_Parameters loc_material;
 GLint loc_ModelViewProjectionMatrix_PS, loc_ModelViewMatrix_PS, loc_ModelViewMatrixInvTrans_PS;
+GLint loc_blind_effect;
+GLint loc_blind_freq;
+GLint loc_screen_effect;
+GLint loc_screen_count;
+
+int flag_blind_effect = false;
+float blind_freq = 90.0f;
+
+int flag_screen_effect = false;
+float screen_count = 2.0f;
 
 //GLint &loc_ModelViewProjectionMatrix = loc_ModelViewProjectionMatrix_simple;
 
@@ -148,10 +158,7 @@ void display(void) {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	 
-	printf("%d\n", shader_Type);
 	for (int i = 0; i < NUMBER_OF_CAMERAS-1; i++) {
-		
-
 		glUseProgram(h_ShaderProgram_simple);
 
 		if (orthoOrPerspective == false) {
@@ -176,18 +183,20 @@ void display(void) {
 
 		if(shader_Type == SHADER_PS)
 			glUseProgram(h_ShaderProgram_PS);
-		else if(shader_Type == SHADER_GS)
+		else
 			glUseProgram(h_ShaderProgram_GS);
 
 		set_light_position(i);
 
-		set_material_floor();
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		draw_static_object(&(static_objects[OBJ_BUILDING]), 0, i, shader_Type);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		
+		set_material_floor();
+
+		if (shader_Type == SHADER_PS)
+			glUniform1i(loc_screen_effect, flag_screen_effect);
 		draw_floor(i, shader_Type);
+		glUniform1i(loc_screen_effect, 0);
 
 		draw_static_object(&(static_objects[OBJ_TABLE]), 0, i, shader_Type);
 		draw_static_object(&(static_objects[OBJ_TABLE]), 1, i, shader_Type);
@@ -259,7 +268,7 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		}
 		break;
-	case 'f':
+	/*case 'f':
 		polygon_fill_on = 1 - polygon_fill_on;
 		if (polygon_fill_on) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -270,7 +279,7 @@ void keyboard(unsigned char key, int x, int y) {
 			fprintf(stdout, "^^^ Line drawing enabled.\n");
 		}
 		glutPostRedisplay();
-		break;
+		break;*/
 	/*case 'd':
 		depth_test_on = 1 - depth_test_on;
 		if (depth_test_on) {
@@ -404,12 +413,11 @@ void keyboard(unsigned char key, int x, int y) {
 	///*-----------------------------------------------------------------------------------------------------*///
 
 	case '1':
-		//camera_type = CAMERA_MAIN;
-		currentCamera = CAMERA_MAIN;
-		set_ViewMatrix_from_camera_frame(ViewMatrix[CAMERA_MAIN], camera[CAMERA_MAIN]);
-		ProjectionMatrix[0] = glm::perspective(camera[CAMERA_MAIN].fov_y*TO_RADIAN, camera[CAMERA_MAIN].aspect_ratio, camera[CAMERA_MAIN].near_clip, camera[CAMERA_MAIN].far_clip);
-
-		camera[CAMERA_MAIN].rotateDirection = 0;
+		flag_blind_effect = !flag_blind_effect;
+		glUseProgram(h_ShaderProgram_PS);
+		glUniform1i(loc_blind_effect, flag_blind_effect);
+		glUseProgram(0);
+		//glutPostRedisplay();
 
 		break;
 	case '2':
@@ -417,11 +425,12 @@ void keyboard(unsigned char key, int x, int y) {
 		//set_ViewMatrix_from_camera_frame(ViewMatrix[CAMERA_MAIN], camera[CAMERA_PERSPECTIVE4]);
 		//ProjectionMatrix[0] = glm::perspective(camera[CAMERA_PERSPECTIVE4].fov_y*TO_RADIAN, camera[CAMERA_PERSPECTIVE4].aspect_ratio, camera[CAMERA_PERSPECTIVE4].near_clip, camera[CAMERA_PERSPECTIVE4].far_clip);
 		//camera[CAMERA_PERSPECTIVE4].rotateDirection = 0;
-		if (shader_Type == SHADER_PS)
+		if (shader_Type == SHADER_PS) {
 			shader_Type = SHADER_GS;
+		}
 		else
 			shader_Type = SHADER_PS;
-		set_up_scene_lights(shader_Type);
+		//set_up_scene_lights();
 		break;
 
 	case '3':
@@ -439,7 +448,62 @@ void keyboard(unsigned char key, int x, int y) {
 			camera[currentCamera].rotateDirection = (camera[currentCamera].rotateDirection + 1) % 2;
 
 		break;
+	case 'w':
+		if (flag_blind_effect) {
+			blind_freq += 45.0f;
+			if (blind_freq > 135.0f)
+				blind_freq = 135.0f;
+			glUseProgram(h_ShaderProgram_PS);
+			glUniform1f(loc_blind_freq, blind_freq);
+			glUseProgram(0);
+			//glutPostRedisplay();
+		}
+		break;
+	case 's':
+		if (flag_blind_effect) {
+			blind_freq -= 45.0f;
+			if (blind_freq < 45.0f)
+				blind_freq = 45.0f;
+			glUseProgram(h_ShaderProgram_PS);
+			glUniform1f(loc_blind_freq, blind_freq);
+			glUseProgram(0);
+			//glutPostRedisplay();
+		}
+		break;
+
+	case 'e':
+		if (flag_screen_effect) {
+			screen_count += 1.0f;
+			if (screen_count > 4.0f)
+				screen_count = 4.0f;
+
+			glUseProgram(h_ShaderProgram_PS);
+			glUniform1f(loc_screen_count, screen_count);
+			glUseProgram(0);
+		}
+		
+		break;
+	case 'd':
+		if (flag_screen_effect) {
+			screen_count -= 1.0f;
+			if (screen_count < 2.0f)
+				screen_count = 2.0f;
+
+			glUseProgram(h_ShaderProgram_PS);
+			glUniform1f(loc_screen_count, screen_count);
+			glUseProgram(0);
+		}
+
+		break;
+	case 'r':
+
+		flag_screen_effect = !flag_screen_effect;
+
+		break;
+
+		
 	}
+
 	//printf("%f %f %f\n", ben_pos.x, ben_pos.y, ben_pos.z);
 }
 
@@ -780,33 +844,26 @@ void motion(int x, int y) {
 void prepare_shader_program(void) {
 	int i;
 	char string[256];
-	ShaderInfo shader_info[3] = {
+	ShaderInfo shader_info_simple[3] = {
 		{ GL_VERTEX_SHADER, "Shaders/simple.vert" },
-		{ GL_FRAGMENT_SHADER, "Shaders/simple.frag" },
-		{ GL_NONE, NULL }
+	{ GL_FRAGMENT_SHADER, "Shaders/simple.frag" },
+	{ GL_NONE, NULL }
 	};
-
 	ShaderInfo shader_info_PS[3] = {
 		{ GL_VERTEX_SHADER, "Shaders/Phong.vert" },
-		{ GL_FRAGMENT_SHADER, "Shaders/Phong.frag" },
-		{ GL_NONE, NULL }
+	{ GL_FRAGMENT_SHADER, "Shaders/Phong.frag" },
+	{ GL_NONE, NULL }
 	};
-
 	ShaderInfo shader_info_GS[3] = {
 		{ GL_VERTEX_SHADER, "Shaders/Gouraud.vert" },
-		{ GL_FRAGMENT_SHADER, "Shaders/Gouraud.frag" },
-		{ GL_NONE, NULL }
+	{ GL_FRAGMENT_SHADER, "Shaders/Gouraud.frag" },
+	{ GL_NONE, NULL }
 	};
 
-	h_ShaderProgram_simple = LoadShaders(shader_info);
-	glUseProgram(h_ShaderProgram_simple);
-
-	loc_ModelViewProjectionMatrix_simple = glGetUniformLocation(h_ShaderProgram_simple, "u_ModelViewProjectionMatrix");
+	h_ShaderProgram_simple = LoadShaders(shader_info_simple);
 	loc_primitive_color = glGetUniformLocation(h_ShaderProgram_simple, "u_primitive_color");
+	loc_ModelViewProjectionMatrix_simple = glGetUniformLocation(h_ShaderProgram_simple, "u_ModelViewProjectionMatrix");
 
-	
-
-	/// --- PS Shading --- ///
 	h_ShaderProgram_PS = LoadShaders(shader_info_PS);
 	loc_ModelViewProjectionMatrix_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewProjectionMatrix");
 	loc_ModelViewMatrix_PS = glGetUniformLocation(h_ShaderProgram_PS, "u_ModelViewMatrix");
@@ -840,7 +897,11 @@ void prepare_shader_program(void) {
 	loc_material.emissive_color = glGetUniformLocation(h_ShaderProgram_PS, "u_material.emissive_color");
 	loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_PS, "u_material.specular_exponent");
 
-	/// --- GS Shading --- ///
+	loc_blind_effect = glGetUniformLocation(h_ShaderProgram_PS, "u_blind_effect");
+	loc_blind_freq = glGetUniformLocation(h_ShaderProgram_PS, "u_blind_freq");
+	loc_screen_effect = glGetUniformLocation(h_ShaderProgram_PS, "u_screen_effect");
+	loc_screen_count = glGetUniformLocation(h_ShaderProgram_PS, "u_screen_count");
+
 	h_ShaderProgram_GS = LoadShaders(shader_info_GS);
 	loc_ModelViewProjectionMatrix_GS = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewProjectionMatrix");
 	loc_ModelViewMatrix_GS = glGetUniformLocation(h_ShaderProgram_GS, "u_ModelViewMatrix");
@@ -873,6 +934,7 @@ void prepare_shader_program(void) {
 	loc_material.specular_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_color");
 	loc_material.emissive_color = glGetUniformLocation(h_ShaderProgram_GS, "u_material.emissive_color");
 	loc_material.specular_exponent = glGetUniformLocation(h_ShaderProgram_GS, "u_material.specular_exponent");
+
 }
 
 
@@ -887,9 +949,6 @@ void initialize_OpenGL(void) {
 	glClearColor(0.12f, 0.18f, 0.12f, 1.0f);
 
 	initialize_lights_and_material();
-	//ViewMatrix[0] = glm::lookAt(camera[0].pos, camera[0].center, camera[0].vaxis);
-	//ViewMatrix[1] = glm::lookAt(camera[1].pos, camera[1].center, camera[1].vaxis);
-	//ViewMatrix[2] = glm::lookAt(camera[2].pos, camera[2].center, camera[2].vaxis);
 }
 
 void prepare_scene(void) {
@@ -911,7 +970,7 @@ void prepare_scene(void) {
 
 	prepare_floor();
 
-	set_up_scene_lights(shader_Type);
+	set_up_scene_lights();
 }
 
 void cleanup(void) {
